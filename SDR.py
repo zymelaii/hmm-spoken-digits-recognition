@@ -90,17 +90,24 @@ def train_and_test():
     accuracy = round(((acc_count/all_data_count)*100.0), 3)
     print(f'trained model accuracy: {accuracy}')
 
+def softmax(x):
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
+
 def predict(audio_path):
-    print('running hmm model on `{audio_path}`...')
+    print(f'running hmm model on `{audio_path}`...')
     models = load_hmm_models()
     feature = extract_mfcc(audio_path).T
     scores = {}
     for (label, model) in models.items():
         score = model.score(feature)
-        print(f'score of {label} is {score}')
         scores[label] = score
-    predict = max(scores.items(), key=lambda e: e[1])
-    print(f'predict result is {predict[0]}, score is {predict[1]}')
+    result = softmax(np.array([*scores.values()]))
+    predict = [*zip(scores.keys(), result)]
+    predict = sorted(predict, key=lambda e: -e[1])
+    for (label, prob) in predict[0:3]:
+        print(f'predict: {label}, prob: {prob * 100:0.00f}%')
+    return predict
 
 if __name__ == '__main__':
     if False:
